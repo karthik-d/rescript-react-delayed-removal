@@ -10,10 +10,13 @@ switch ReactDOM.querySelector("#root") {
   interactions will have to be manually performed again to
   get the application back to the state you were testing
   earlier. So this saves a lot of time in development!
-  
+
   https://www.snowpack.dev/concepts/hot-module-replacement
  */
+
+ /*
 @scope("import") @val external meta: 'a = "meta"
 if meta["hot"] {
   meta["hot"]["accept"]()
 }
+*/
