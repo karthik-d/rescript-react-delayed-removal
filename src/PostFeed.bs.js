@@ -4,13 +4,36 @@ import * as Post from "./post.bs.js";
 import * as Curry from "bs-platform/lib/es6/curry.js";
 import * as React from "react";
 import * as Belt_Array from "bs-platform/lib/es6/belt_Array.js";
+import * as Belt_MapString from "bs-platform/lib/es6/belt_MapString.js";
 
 function s(prim) {
   return prim;
 }
 
 function reducer(state, action) {
-  return state;
+  switch (action.TAG | 0) {
+    case /* DeleteLater */0 :
+        return {
+                posts: state.posts,
+                forDeletion: Belt_MapString.set(state.forDeletion, action._0.id, action._1)
+              };
+    case /* DeleteAbort */1 :
+        var post = action._0;
+        window.clearTimeout(Belt_MapString.get(state.forDeletion, post.id));
+        return {
+                posts: state.posts,
+                forDeletion: Belt_MapString.remove(state.forDeletion, post.id)
+              };
+    case /* DeleteNow */2 :
+        var post$1 = action._0;
+        return {
+                posts: state.posts.filter(function (chPost) {
+                      return chPost.id !== post$1.id;
+                    }),
+                forDeletion: state.forDeletion
+              };
+    
+  }
 }
 
 var initialState = {
@@ -18,38 +41,22 @@ var initialState = {
   forDeletion: undefined
 };
 
-function toggleContentType(type_) {
-  if (type_) {
-    return /* Warning */0;
-  } else {
-    return /* Excerpt */1;
-  }
-}
-
-function PostFeed$Warning(Props) {
-  var post = Props.post;
-  return React.createElement("div", {
-              className: "relative bg-yellow-100 px-8 py-4 mb-4 h-40"
-            }, React.createElement("p", {
-                  className: "text-center white mb-1"
-                }, "This post from " + post.title + " by " + post.author + " will be permanently removed in 10 seconds."), React.createElement("div", {
-                  className: "flex justify-center"
-                }, React.createElement("button", {
-                      className: "mr-4 mt-4 bg-yellow-500 hover:bg-yellow-900 text-white py-2 px-4"
-                    }, "Restore"), React.createElement("button", {
-                      className: "mr-4 mt-4 bg-red-500 hover:bg-red-900 text-white py-2 px-4"
-                    }, "Delete Immediately")), React.createElement("div", {
-                  className: "bg-red-500 h-2 w-full absolute top-0 left-0 progress"
-                }));
-}
-
-var Warning = {
-  make: PostFeed$Warning
-};
-
 function PostFeed$Excerpt(Props) {
   var post = Props.post;
-  var removeFunc = Props.removeFunc;
+  var dispatchFeed = Props.dispatchFeed;
+  var initPostDelete = function (param) {
+    var timeoutId = window.setTimeout((function (param) {
+            return Curry._1(dispatchFeed, {
+                        TAG: /* DeleteNow */2,
+                        _0: post
+                      });
+          }), 10000);
+    return Curry._1(dispatchFeed, {
+                TAG: /* DeleteLater */0,
+                _0: post,
+                _1: timeoutId
+              });
+  };
   return React.createElement("div", {
               className: "bg-green-700 hover:bg-green-900 text-gray-300 hover:text-gray-100 px-8 py-4 mb-4"
             }, React.createElement("h2", {
@@ -62,7 +69,7 @@ function PostFeed$Excerpt(Props) {
                               }, cont);
                   })), React.createElement("button", {
                   className: "mr-4 mt-4 bg-red-500 hover:bg-red-900 text-white py-2 px-4",
-                  onClick: removeFunc
+                  onClick: initPostDelete
                 }, "Remove this post"));
 }
 
@@ -70,49 +77,60 @@ var Excerpt = {
   make: PostFeed$Excerpt
 };
 
-function showWarning(type_) {
-  if (type_) {
-    return false;
-  } else {
-    return true;
-  }
-}
-
-function PostFeed$Post(Props) {
+function PostFeed$Warning(Props) {
   var post = Props.post;
-  var match = React.useState(function () {
-        return /* Excerpt */1;
-      });
-  var setContent = match[1];
-  if (match[0] ? false : true) {
-    return React.createElement(PostFeed$Warning, {
-                post: post
-              });
-  } else {
-    return React.createElement(PostFeed$Excerpt, {
-                post: post,
-                removeFunc: (function (param) {
-                    return Curry._1(setContent, (function (param) {
-                                  return /* Warning */0;
-                                }));
-                  })
-              });
-  }
+  var dispatchFeed = Props.dispatchFeed;
+  return React.createElement("div", {
+              className: "relative bg-yellow-100 px-8 py-4 mb-4 h-40"
+            }, React.createElement("p", {
+                  className: "text-center white mb-1"
+                }, "This post from " + post.title + " by " + post.author + " will be permanently removed in 10 seconds."), React.createElement("div", {
+                  className: "flex justify-center"
+                }, React.createElement("button", {
+                      className: "mr-4 mt-4 bg-yellow-500 hover:bg-yellow-900 text-white py-2 px-4",
+                      onClick: (function (param) {
+                          return Curry._1(dispatchFeed, {
+                                      TAG: /* DeleteAbort */1,
+                                      _0: post
+                                    });
+                        })
+                    }, "Restore"), React.createElement("button", {
+                      className: "mr-4 mt-4 bg-red-500 hover:bg-red-900 text-white py-2 px-4",
+                      onClick: (function (param) {
+                          return Curry._1(dispatchFeed, {
+                                      TAG: /* DeleteNow */2,
+                                      _0: post
+                                    });
+                        })
+                    }, "Delete Immediately")), React.createElement("div", {
+                  className: "bg-red-500 h-2 w-full absolute top-0 left-0 progress"
+                }));
 }
 
-var Post$1 = {
-  make: PostFeed$Post
+var Warning = {
+  make: PostFeed$Warning
 };
 
 function PostFeed(Props) {
   var match = React.useReducer(reducer, initialState);
+  var dispatch = match[1];
+  var state = match[0];
   return React.createElement("div", {
               className: "max-w-3xl mx-auto mt-8 relative"
-            }, Belt_Array.map(match[0].posts, (function (postContent) {
-                    return React.createElement(PostFeed$Post, {
-                                post: postContent,
-                                key: postContent.id
-                              });
+            }, Belt_Array.mapWithIndex(state.posts, (function (idx, postContent) {
+                    if (Belt_MapString.has(state.forDeletion, postContent.id)) {
+                      return React.createElement(PostFeed$Warning, {
+                                  post: postContent,
+                                  dispatchFeed: dispatch,
+                                  key: postContent.id + "." + String(idx)
+                                });
+                    } else {
+                      return React.createElement(PostFeed$Excerpt, {
+                                  post: postContent,
+                                  dispatchFeed: dispatch,
+                                  key: postContent.id + "." + String(idx)
+                                });
+                    }
                   })));
 }
 
@@ -122,11 +140,8 @@ export {
   s ,
   reducer ,
   initialState ,
-  toggleContentType ,
-  Warning ,
   Excerpt ,
-  showWarning ,
-  Post$1 as Post,
+  Warning ,
   make ,
   
 }
