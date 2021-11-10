@@ -1,3 +1,5 @@
+Linking together ReScrip and React to implement delayed removal of post from a webpage. During the delay, the user may choose to cancel the deletion (change of mind) and retain the post
+
 ## Getting Started
 
 ### Install dependencies
